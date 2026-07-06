@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LeetCode Countdown</title>
+<meta name="description" content="A live countdown to the next LeetCode Daily Coding Challenge, which resets every day at 00:00 UTC." />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d1117;
+    --accent: #ffa116;
+    --green: #2dbb67;
+    --text: #e6edf3;
+    --muted: #7d8590;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 20px;
+  }
+
+  .wrap { animation: fade 0.6s ease both; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  .brand {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+  .brand .code { color: var(--accent); }
+
+  .clock {
+    font-weight: 800;
+    font-size: clamp(3.4rem, 18vw, 9rem);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .clock .colon { color: var(--accent); }
+
+  .subline {
+    margin-top: 34px;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .today {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 26px;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s ease, opacity 0.15s ease;
+  }
+  .today:hover { border-color: var(--accent); }
+  .today .diff { color: var(--muted); font-weight: 500; }
+  .today svg { width: 14px; height: 14px; }
+
+  .contests {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 48px;
+  }
+  .mini {
+    width: 208px;
+    padding: 16px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease;
+  }
+  .mini:hover { border-color: var(--accent); }
+  .mini .mlbl {
+    font-size: 0.64rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mini .mtime {
+    margin-top: 9px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+  .mini .mtime .d { color: var(--accent); }
+
+  .mini.live {
+    border-color: var(--green);
+    background: rgba(45, 187, 103, 0.06);
+  }
+  .mini.live .mtime { color: var(--green); }
+  .livedot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 9px;
+    vertical-align: middle;
+    box-shadow: 0 0 0 0 rgba(45, 187, 103, 0.6);
+    animation: livepulse 1.6s infinite;
+  }
+  @keyframes livepulse {
+    0%   { box-shadow: 0 0 0 0 rgba(45, 187, 103, 0.5); }
+    70%  { box-shadow: 0 0 0 7px rgba(45, 187, 103, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(45, 187, 103, 0); }
+  }
+  .mini .rem {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0;
+  }
+
+  footer {
+    position: fixed;
+    bottom: 18px;
+    left: 0; right: 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+    opacity: 0.55;
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand"><span class="lc">Leet</span><span class="code">Code</span> Countdown</div>
+
+    <div class="clock" id="clock" role="timer" aria-live="polite" aria-label="Time until next LeetCode daily problem">
+      <span id="hh">00</span><span class="colon">:</span><span id="mm">00</span><span class="colon">:</span><span id="ss">00</span>
+    </div>
+
+    <p class="subline">until the next daily problem</p>
+
+    <a class="today" id="today" href="https://leetcode.com/problemset/" target="_blank" rel="noopener">
+      Open today's problem
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+    </a>
+
+    <div class="contests">
+      <a class="mini" id="weeklyTile" href="https://leetcode.com/contest/" target="_blank" rel="noopener">
+        <div class="mlbl">Weekly Contest</div>
+        <div class="mtime" id="weekly">00:00:00</div>
+      </a>
+      <a class="mini" id="biweeklyTile" href="https://leetcode.com/contest/" target="_blank" rel="noopener">
+        <div class="mlbl">Biweekly Contest</div>
+        <div class="mtime" id="biweekly">00:00:00</div>
+      </a>
+    </div>
+  </main>
+
+  <footer>Not affiliated with LeetCode.</footer>
+
+  <script>
+    const hhEl = document.getElementById('hh');
+    const mmEl = document.getElementById('mm');
+    const ssEl = document.getElementById('ss');
+    const weeklyEl = document.getElementById('weekly');
+    const biweeklyEl = document.getElementById('biweekly');
+    const weeklyTile = document.getElementById('weeklyTile');
+    const biweeklyTile = document.getElementById('biweeklyTile');
+    const pad = (n) => String(n).padStart(2, '0');
+
+    const DAY = 86400000;
+    const CONTEST_DURATION = 90 * 60 * 1000; // 90 minutes (LeetCode contests)
+
+    // Recurring contest anchors (from LeetCode), in UTC:
+    // Weekly: Sundays 02:30 UTC (period 7 days)
+    // Biweekly: Saturdays 14:30 UTC (period 14 days)
+    const WEEKLY_ANCHOR = Date.UTC(2026, 6, 12, 2, 30, 0);   // Weekly Contest 510
+    const BIWEEKLY_ANCHOR = Date.UTC(2026, 6, 18, 14, 30, 0); // Biweekly Contest 187
+    const WEEKLY_PERIOD = 7 * DAY;
+    const BIWEEKLY_PERIOD = 14 * DAY;
+
+    function nextResetUTC(base) {
+      const now = new Date(base);
+      return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0);
+    }
+
+    // State of a recurring contest: live now, or counting down to the next.
+    function contestState(anchor, period, now) {
+      const k = Math.floor((now - anchor) / period);
+      const lastStart = anchor + k * period;
+      if (now < lastStart + CONTEST_DURATION) {
+        return { live: true, remaining: lastStart + CONTEST_DURATION - now };
+      }
+      return { live: false, remaining: lastStart + period - now };
+    }
+
+    // Format ms remaining. Includes a leading day segment when >= 24h.
+    function fmt(ms) {
+      const t = Math.floor(ms / 1000);
+      const d = Math.floor(t / 86400);
+      const h = Math.floor((t % 86400) / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      const s = t % 60;
+      const clock = `${pad(h)}:${pad(m)}:${pad(s)}`;
+      return d > 0 ? `<span class="d">${d}d</span> ${clock}` : clock;
+    }
+
+    // Compact format for the live "time left" line (always under 90 min).
+    function fmtShort(ms) {
+      const t = Math.floor(ms / 1000);
+      const h = Math.floor(t / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      const s = t % 60;
+      return (h > 0 ? h + ':' + pad(m) : m) + ':' + pad(s);
+    }
+
+    function renderContest(tile, timeEl, state) {
+      if (state.live) {
+        tile.classList.add('live');
+        timeEl.innerHTML =
+          '<span class="livedot"></span>Live now' +
+          '<span class="rem">' + fmtShort(state.remaining) + ' left</span>';
+      } else {
+        tile.classList.remove('live');
+        timeEl.innerHTML = fmt(state.remaining);
+      }
+    }
+
+    function tick() {
+      const now = Date.now();
+
+      const diff = Math.max(0, nextResetUTC(now) - now);
+      const t = Math.floor(diff / 1000);
+      const h = Math.floor(t / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      const s = t % 60;
+      hhEl.textContent = pad(h);
+      mmEl.textContent = pad(m);
+      ssEl.textContent = pad(s);
+
+      const weekly = contestState(WEEKLY_ANCHOR, WEEKLY_PERIOD, now);
+      const biweekly = contestState(BIWEEKLY_ANCHOR, BIWEEKLY_PERIOD, now);
+      renderContest(weeklyTile, weeklyEl, weekly);
+      renderContest(biweeklyTile, biweeklyEl, biweekly);
+
+      if (weekly.live || biweekly.live) {
+        const which = weekly.live ? 'Weekly' : 'Biweekly';
+        document.title = which + ' Contest live now - LeetCode Countdown';
+      } else {
+        document.title = `${pad(h)}:${pad(m)}:${pad(s)} LeetCode Countdown`;
+      }
+    }
+
+    tick();
+    setInterval(tick, 1000);
+
+    // Resolve today's exact problem via our same-origin Pages Function
+    // (functions/api/daily.js), which proxies LeetCode server-side. If it
+    // isn't available (e.g. opening the file directly), the link stays
+    // pointed at the problemset page.
+    (async function loadToday() {
+      const el = document.getElementById('today');
+      try {
+        const res = await fetch('/api/daily');
+        if (!res.ok) return;
+        const d = await res.json();
+        if (!d || !d.link) return;
+        el.href = d.link;
+        el.innerHTML =
+          'Today: ' + d.title +
+          ' <span class="diff">(' + d.difficulty + ')</span>' +
+          ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>';
+      } catch (_) {
+        /* keep fallback link */
+      }
+    })();
+  </script>
+</body>
+</html>
