@@ -201,19 +201,32 @@
     const WEEKLY_PERIOD = 7 * DAY;
     const BIWEEKLY_PERIOD = 14 * DAY;
 
+    // Contest number that occurs at each anchor time, so we can build a
+    // direct link to the specific contest
+    const WEEKLY_BASE_NUMBER = 510;
+    const BIWEEKLY_BASE_NUMBER = 187;
+
     function nextResetUTC(base) {
       const now = new Date(base);
       return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0);
     }
 
     // State of a recurring contest: live now, or counting down to the next.
-    function contestState(anchor, period, now) {
+    function contestState(anchor, period, baseNumber, now) {
       const k = Math.floor((now - anchor) / period);
       const lastStart = anchor + k * period;
       if (now < lastStart + CONTEST_DURATION) {
-        return { live: true, remaining: lastStart + CONTEST_DURATION - now };
+        return {
+          live: true,
+          remaining: lastStart + CONTEST_DURATION - now,
+          number: baseNumber + k,
+        };
       }
-      return { live: false, remaining: lastStart + period - now };
+      return {
+        live: false,
+        remaining: lastStart + period - now,
+        number: baseNumber + k + 1,
+      };
     }
 
     // Format ms remaining. Includes a leading day segment when >= 24h.
@@ -236,7 +249,8 @@
       return (h > 0 ? h + ':' + pad(m) : m) + ':' + pad(s);
     }
 
-    function renderContest(tile, timeEl, state) {
+    function renderContest(tile, timeEl, state, slugPrefix) {
+      tile.href = 'https://leetcode.com/contest/' + slugPrefix + state.number + '/';
       if (state.live) {
         tile.classList.add('live');
         timeEl.innerHTML =
@@ -260,10 +274,10 @@
       mmEl.textContent = pad(m);
       ssEl.textContent = pad(s);
 
-      const weekly = contestState(WEEKLY_ANCHOR, WEEKLY_PERIOD, now);
-      const biweekly = contestState(BIWEEKLY_ANCHOR, BIWEEKLY_PERIOD, now);
-      renderContest(weeklyTile, weeklyEl, weekly);
-      renderContest(biweeklyTile, biweeklyEl, biweekly);
+      const weekly = contestState(WEEKLY_ANCHOR, WEEKLY_PERIOD, WEEKLY_BASE_NUMBER, now);
+      const biweekly = contestState(BIWEEKLY_ANCHOR, BIWEEKLY_PERIOD, BIWEEKLY_BASE_NUMBER, now);
+      renderContest(weeklyTile, weeklyEl, weekly, 'weekly-contest-');
+      renderContest(biweeklyTile, biweeklyEl, biweekly, 'biweekly-contest-');
 
       if (weekly.live || biweekly.live) {
         const which = weekly.live ? 'Weekly' : 'Biweekly';
@@ -276,10 +290,8 @@
     tick();
     setInterval(tick, 1000);
 
-    // Resolve today's exact problem via our same-origin Pages Function
-    // (functions/api/daily.js), which proxies LeetCode server-side. If it
-    // isn't available (e.g. opening the file directly), the link stays
-    // pointed at the problemset page.
+    // Resolve today's exact problem. If it isn't available (e.g. opening the file directly),
+    // the link stays pointed at the problemset page.
     (async function loadToday() {
       const el = document.getElementById('today');
       try {
