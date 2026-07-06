@@ -1,4 +1,23 @@
-export async function onRequestGet() {
+// Workers entry point. Serves GET /api/daily (proxying LeetCode server-side,
+// which avoids the browser CORS restriction) and delegates everything else to
+// the static assets in ./public via the ASSETS binding.
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/daily') {
+      if (request.method !== 'GET') {
+        return json({ error: 'method not allowed' }, 405);
+      }
+      return handleDaily();
+    }
+
+    // Everything else: serve static assets (index.html, favicon.svg, ...).
+    return env.ASSETS.fetch(request);
+  },
+};
+
+async function handleDaily() {
   const query =
     'query { activeDailyCodingChallengeQuestion { date link question { title titleSlug difficulty } } }';
 
